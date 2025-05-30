@@ -40,7 +40,8 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
     .map(([skill, data]) => ({
       skill,
       count: data.count,
-      isUserSkill: data.isUserSkill
+      isUserSkill: data.isUserSkill,
+      fill: data.isUserSkill ? '#10B981' : '#6366F1'
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
@@ -155,11 +156,11 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
               />
               <YAxis />
               <Tooltip />
-              <Bar 
-                dataKey="count" 
-                fill={(entry) => entry.isUserSkill ? '#10B981' : '#6366F1'}
-                name="Job Count"
-              />
+              <Bar dataKey="count" name="Job Count">
+                {skillData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-4 mt-4 text-sm">
