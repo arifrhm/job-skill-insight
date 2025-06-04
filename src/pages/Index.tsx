@@ -1,9 +1,11 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { SearchInterface } from '../components/SearchInterface';
 import { ResultsDisplay } from '../components/ResultsDisplay';
 import { SkillAnalytics } from '../components/SkillAnalytics';
 import { useToast } from '../hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { LogOut, User } from 'lucide-react';
 
 export interface Skill {
   skill_id: number;
@@ -33,7 +35,37 @@ const Index = () => {
     showOnlyMissing: false
   });
   const [favoritePositions, setFavoritePositions] = useState<Set<number>>(new Set());
+  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if user is logged in
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      // Pre-populate skills if user is logged in
+      if (userData.skills) {
+        setCurrentSkills(userData.skills);
+      }
+      if (userData.job_title) {
+        setJobTitle(userData.job_title);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setCurrentSkills([]);
+    setJobTitle('');
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out"
+    });
+  };
 
   const handleSearch = async () => {
     if (!jobTitle.trim()) {
@@ -139,6 +171,37 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Navigation Header */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-gray-900">Skill Recommender</h1>
+          
+          <div className="flex items-center gap-4">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <User className="w-4 h-4" />
+                  <span>Welcome, {user.username}</span>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/register">Register</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
