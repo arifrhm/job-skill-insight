@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,9 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const MAX_VISIBLE_SKILLS = 5;
+  const visibleSkills = skills.slice(0, MAX_VISIBLE_SKILLS);
+  const hiddenSkillsCount = skills.length - MAX_VISIBLE_SKILLS;
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -188,7 +190,7 @@ const Register = () => {
               
               {skills.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {skills.map((skill, index) => (
+                  {visibleSkills.map((skill, index) => (
                     <div
                       key={index}
                       className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm"
@@ -203,6 +205,11 @@ const Register = () => {
                       </button>
                     </div>
                   ))}
+                  {hiddenSkillsCount > 0 && (
+                    <div className="flex items-center bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm">
+                      +{hiddenSkillsCount} more skills
+                    </div>
+                  )}
                 </div>
               )}
             </div>
