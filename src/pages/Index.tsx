@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SearchInterface } from '../components/SearchInterface';
-import { ResultsDisplay } from '../components/ResultsDisplay';
 import { SkillAnalytics } from '../components/SkillAnalytics';
 import { useToast } from '../hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { skillsApi } from '@/lib/api';
 
 export interface Skill {
   skill_id: number;
@@ -24,18 +25,23 @@ export interface SearchFilters {
   showOnlyMissing: boolean;
 }
 
+interface User {
+  user_id: number;
+  username: string;
+  email: string;
+  job_title: string;
+  skills: string[];
+}
+
 const Index = () => {
   const [currentSkills, setCurrentSkills] = useState<string[]>([]);
   const [jobTitle, setJobTitle] = useState('');
-  const [results, setResults] = useState<JobPosition[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<SearchFilters>({
     sortBy: 'missingSkills',
     showOnlyMissing: false
   });
-  const [favoritePositions, setFavoritePositions] = useState<Set<number>>(new Set());
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [shouldFetch, setShouldFetch] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,13 +67,28 @@ const Index = () => {
     setUser(null);
     setCurrentSkills([]);
     setJobTitle('');
+    setShouldFetch(false);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out"
     });
   };
 
-  const handleSearch = async () => {
+  const { data: results, isLoading, error } = useQuery({
+    queryKey: ['skillRecommendations', jobTitle, currentSkills],
+    queryFn: () => {
+      if (!jobTitle.trim()) {
+        throw new Error('Please enter a job title');
+      }
+      return skillsApi.recommendSkills({
+        job_title: jobTitle,
+        current_skills: currentSkills
+      });
+    },
+    enabled: shouldFetch && !!jobTitle.trim(),
+  });
+
+  const handleSearch = () => {
     if (!jobTitle.trim()) {
       toast({
         title: "Error",
@@ -76,97 +97,7 @@ const Index = () => {
       });
       return;
     }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Simulate API call - replace with actual endpoint
-      const response = await fetch('/api/v1/recommend-skills/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          job_title: jobTitle,
-          current_skills: currentSkills
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendations');
-      }
-
-      const data = await response.json();
-      setResults(data);
-      
-      toast({
-        title: "Success",
-        description: `Found ${data.length} job recommendations`,
-      });
-    } catch (err) {
-      // For demo purposes, we'll use mock data
-      const mockData: JobPosition[] = [
-        {
-          position_id: 1,
-          job_title: "Senior Frontend Developer",
-          job_detail_link: "https://example.com/job/1",
-          skills: [
-            { skill_id: 1, skill_name: "React" },
-            { skill_id: 2, skill_name: "TypeScript" },
-            { skill_id: 3, skill_name: "Node.js" },
-            { skill_id: 4, skill_name: "GraphQL" },
-            { skill_id: 5, skill_name: "AWS" }
-          ]
-        },
-        {
-          position_id: 2,
-          job_title: "Full Stack Engineer",
-          job_detail_link: "https://example.com/job/2",
-          skills: [
-            { skill_id: 1, skill_name: "React" },
-            { skill_id: 6, skill_name: "Python" },
-            { skill_id: 7, skill_name: "Django" },
-            { skill_id: 8, skill_name: "PostgreSQL" },
-            { skill_id: 9, skill_name: "Docker" }
-          ]
-        },
-        {
-          position_id: 3,
-          job_title: "Frontend Architect",
-          job_detail_link: "https://example.com/job/3",
-          skills: [
-            { skill_id: 1, skill_name: "React" },
-            { skill_id: 2, skill_name: "TypeScript" },
-            { skill_id: 10, skill_name: "Webpack" },
-            { skill_id: 11, skill_name: "Micro-frontends" },
-            { skill_id: 12, skill_name: "Performance Optimization" }
-          ]
-        }
-      ];
-      setResults(mockData);
-      setError("Using demo data - API endpoint not available");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleFavorite = (positionId: number) => {
-    const newFavorites = new Set(favoritePositions);
-    if (newFavorites.has(positionId)) {
-      newFavorites.delete(positionId);
-      toast({
-        title: "Removed from favorites",
-        description: "Position removed from your favorites"
-      });
-    } else {
-      newFavorites.add(positionId);
-      toast({
-        title: "Added to favorites",
-        description: "Position saved to your favorites"
-      });
-    }
-    setFavoritePositions(newFavorites);
+    setShouldFetch(true);
   };
 
   return (
@@ -206,10 +137,10 @@ const Index = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Skill Gap Analysis & Career Recommendations
+            Skill Gap Analysis
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover your skill gaps, find matching job opportunities, and accelerate your career growth
+            Discover your skill gaps and accelerate your career growth
           </p>
         </div>
 
@@ -220,19 +151,19 @@ const Index = () => {
           currentSkills={currentSkills}
           setCurrentSkills={setCurrentSkills}
           onSearch={handleSearch}
-          loading={loading}
+          loading={isLoading}
         />
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-800">
-            <p className="font-medium">Demo Mode Active</p>
-            <p className="text-sm">{error}</p>
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-800">
+            <p className="font-medium">Error</p>
+            <p className="text-sm">{error.message}</p>
           </div>
         )}
 
         {/* Analytics Dashboard */}
-        {results.length > 0 && (
+        {results && results.length > 0 && (
           <SkillAnalytics
             results={results}
             currentSkills={currentSkills}
@@ -240,16 +171,6 @@ const Index = () => {
             setFilters={setFilters}
           />
         )}
-
-        {/* Results Display */}
-        <ResultsDisplay
-          results={results}
-          currentSkills={currentSkills}
-          filters={filters}
-          loading={loading}
-          favoritePositions={favoritePositions}
-          onToggleFavorite={toggleFavorite}
-        />
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -69,41 +68,44 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   );
 
   return (
-    <Card className="p-8 mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+    <Card className="p-6 mb-8">
       <div className="space-y-6">
         {/* Job Title Input */}
-        <div className="relative">
+        <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Target Job Title
+            Job Title
           </label>
-          <Input
-            type="text"
-            placeholder="e.g., Frontend Developer, Data Scientist..."
-            value={jobTitle}
-            onChange={(e) => setJobTitle(e.target.value)}
-            onFocus={() => setShowJobSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowJobSuggestions(false), 200)}
-            className="text-lg py-3 pr-12"
-          />
-          {showJobSuggestions && filteredJobSuggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-              {filteredJobSuggestions.map((job, index) => (
-                <button
-                  key={index}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
-                  onClick={() => {
-                    setJobTitle(job);
-                    setShowJobSuggestions(false);
-                  }}
-                >
-                  {job}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="Enter job title..."
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              onFocus={() => setShowJobSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowJobSuggestions(false), 200)}
+              className="py-3"
+            />
+            
+            {showJobSuggestions && filteredJobSuggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                {filteredJobSuggestions.map((job, index) => (
+                  <button
+                    key={index}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setJobTitle(job);
+                      setShowJobSuggestions(false);
+                    }}
+                  >
+                    {job}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Current Skills */}
+        {/* Skills Input */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Your Current Skills
