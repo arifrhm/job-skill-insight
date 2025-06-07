@@ -15,15 +15,19 @@ interface SearchInterfaceProps {
 }
 
 const popularSkills = [
-  'React', 'TypeScript', 'JavaScript', 'Python', 'Node.js', 'Java', 'AWS', 
-  'Docker', 'Kubernetes', 'GraphQL', 'MongoDB', 'PostgreSQL', 'Redux', 
+  'React', 'TypeScript', 'JavaScript', 'Python', 'Node.js', 'Java', 'AWS',
+  'Docker', 'Kubernetes', 'GraphQL', 'MongoDB', 'PostgreSQL', 'Redux',
   'Next.js', 'Vue.js', 'Angular', 'Django', 'Flask', 'Spring Boot', 'Git'
 ];
 
 const jobSuggestions = [
-  'Frontend Developer', 'Backend Developer', 'Full Stack Developer', 
-  'Software Engineer', 'DevOps Engineer', 'Data Scientist', 'Product Manager',
-  'UI/UX Designer', 'Mobile Developer', 'Cloud Architect'
+  'Backend Engineer/Developer',
+  'Frontend Engineer/Developer',
+  'Fullstack Engineer/Developer',
+  'DevOps Engineer',
+  'Quality Assurance (QA) Engineer',
+  'Cloud Engineer',
+  'Business Analyst'
 ];
 
 export const SearchInterface: React.FC<SearchInterfaceProps> = ({
@@ -85,7 +89,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               onBlur={() => setTimeout(() => setShowJobSuggestions(false), 200)}
               className="py-3"
             />
-            
+
             {showJobSuggestions && filteredJobSuggestions.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {filteredJobSuggestions.map((job, index) => (
@@ -130,7 +134,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
             >
               <Plus className="h-4 w-4" />
             </Button>
-            
+
             {showSkillSuggestions && filteredSkillSuggestions.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {filteredSkillSuggestions.map((skill, index) => (
@@ -174,11 +178,10 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                   key={index}
                   onClick={() => addSkill(skill)}
                   disabled={currentSkills.includes(skill)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                    currentSkills.includes(skill)
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${currentSkills.includes(skill)
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
-                  }`}
+                    }`}
                 >
                   {skill}
                 </button>
