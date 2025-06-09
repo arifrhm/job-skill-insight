@@ -146,15 +146,15 @@ export const authApi = {
 
 // Skills API
 export const skillsApi = {
-  getSkills: async (page = 1, size = 10) => {
+  getSkills: async (page = 1, size = 10, search?: string) => {
     const response = await api.get<PaginatedResponse<SkillResponse>>('/skills/', {
-      params: { page, size },
+      params: { page, size, ...(search ? { search } : {}) },
     });
     return response.data;
   },
 
   createSkill: async (skill_name: string) => {
-    const response = await api.post<SkillResponse>('/skills/', null, {
+    const response = await api.post<SkillResponse>('/skills/', undefined, {
       params: { skill_name },
     });
     return response.data;
