@@ -1,122 +1,196 @@
+import axios from 'axios';
+
 // Debug environment variables
-console.log("All env variables:", import.meta.env)
-console.log("VITE_BASE_URL:", import.meta.env.VITE_BASE_URL)
+console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-console.log("Final BASE_URL:", BASE_URL)
+console.log("Final API_BASE_URL:", API_BASE_URL);
 
-interface LoginCredentials {
-  email: string
-  password: string
-}
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-interface RegisterCredentials {
-  username: string
-  email: string
-  password: string
-  job_title: string
-  skills: string[]
-}
-
-interface LoginResponse {
-  access_token: string
-  refresh_token: string
-  user: {
-    id: string
-    email: string
-    name: string
+// Add request interceptor to add auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-}
+  return config;
+});
 
-interface RegisterResponse {
-  user_id: number
-  username: string
-  email: string
-  job_title: string
-  skills: string[]
-}
+// Add response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
 
-interface SkillRecommendationRequest {
-  job_title: string
-  current_skills: string[]
-}
+        const response = await api.post('/users/refresh', null, {
+          headers: {
+            Authorization: `Bearer ${refreshToken}`,
+          },
+        });
 
-interface Skill {
-  skill_id: number
-  skill_name: string
-}
+        const { access_token, refresh_token } = response.data;
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
 
-interface Position {
-  position_id: number
-  job_title: string
-  job_detail_link: string
-  skills: Skill[]
-}
-
-export const fetchApi = async <T>(
-  endpoint: string,
-  options?: RequestInit
-): Promise<T> => {
-  const url = `${BASE_URL}${endpoint}`
-  console.log("Making request to:", url)
-  console.log("Request options:", options)
-  
-  // Get access token from localStorage
-  const accessToken = localStorage.getItem('access_token')
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {}),
-      ...options?.headers,
-    },
-  })
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.message || `HTTP error! status: ${response.status}`)
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
   }
+);
 
-  return response.json()
+// Types from OpenAPI spec
+export interface ValidationError {
+  loc: (string | number)[];
+  msg: string;
+  type: string;
 }
 
-// Example API functions
-export const api = {
-  get: <T>(endpoint: string) => fetchApi<T>(endpoint),
-  post: <T>(endpoint: string, data: unknown) =>
-    fetchApi<T>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  put: <T>(endpoint: string, data: unknown) =>
-    fetchApi<T>(endpoint, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-  delete: <T>(endpoint: string) =>
-    fetchApi<T>(endpoint, {
-      method: 'DELETE',
-    }),
+export interface HTTPValidationError {
+  detail: ValidationError[];
 }
 
-// Auth API functions
+export interface SkillResponse {
+  skill_id: number;
+  skill_name: string;
+}
+
+export interface UserResponse {
+  username: string;
+  email: string;
+  job_title: string;
+  user_id: number;
+  skills: SkillResponse[];
+}
+
+export interface UserCreate {
+  username: string;
+  email: string;
+  job_title: string;
+  password: string;
+  skill_ids?: number[];
+}
+
+export interface UserLogin {
+  email: string;
+  password: string;
+}
+
+export interface JobPositionResponse {
+  position_id: number;
+  job_title: string;
+  created_at: string;
+  updated_at: string;
+  required_skills: SkillResponse[];
+}
+
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+  items: T[];
+}
+
+// Auth API
 export const authApi = {
-  login: (credentials: LoginCredentials) =>
-    api.post<LoginResponse>('/api/v1/auth/login', credentials),
-  
-  register: (credentials: RegisterCredentials) =>
-    api.post<RegisterResponse>('/api/v1/auth/register', credentials),
-  
-  logout: () => api.post<void>('/api/v1/auth/logout', {}),
-  
-  refreshToken: (refreshToken: string) =>
-    api.post<{ access_token: string }>('/api/v1/auth/refresh', { refresh_token: refreshToken }),
-}
+  register: async (data: UserCreate) => {
+    const response = await api.post<UserResponse>('/users/register', data);
+    return response.data;
+  },
 
-// Skills API functions
+  login: async (data: UserLogin) => {
+    const response = await api.post<{
+      access_token: string;
+      refresh_token: string;
+      token_type: string;
+    }>('/users/login', data);
+    
+    localStorage.setItem('access_token', response.data.access_token);
+    localStorage.setItem('refresh_token', response.data.refresh_token);
+    return response.data;
+  },
+
+  logout: () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  },
+
+  getCurrentUser: async () => {
+    const response = await api.get<UserResponse>('/users/me');
+    return response.data;
+  },
+};
+
+// Skills API
 export const skillsApi = {
-  recommendSkills: (request: SkillRecommendationRequest) =>
-    api.post<Position[]>('/api/v1/recommend-skills', request),
-} 
+  getSkills: async (page = 1, size = 10) => {
+    const response = await api.get<PaginatedResponse<SkillResponse>>('/skills/', {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  createSkill: async (skill_name: string) => {
+    const response = await api.post<SkillResponse>('/skills/', null, {
+      params: { skill_name },
+    });
+    return response.data;
+  },
+
+  addUserSkill: async (skill_id: number) => {
+    const response = await api.post(`/skills/user/${skill_id}`);
+    return response.data;
+  },
+
+  removeUserSkill: async (skill_id: number) => {
+    const response = await api.delete(`/skills/user/${skill_id}`);
+    return response.data;
+  },
+};
+
+// Jobs API
+export const jobsApi = {
+  getJobs: async (page = 1, size = 10) => {
+    const response = await api.get<PaginatedResponse<JobPositionResponse>>('/jobs/', {
+      params: { page, size },
+    });
+    return response.data;
+  },
+
+  createJob: async (job_title: string, skill_ids: number[]) => {
+    const response = await api.post<JobPositionResponse>('/jobs/', skill_ids, {
+      params: { job_title },
+    });
+    return response.data;
+  },
+
+  getJobRecommendations: async () => {
+    const response = await api.get<JobPositionResponse[]>('/jobs/recommendations');
+    return response.data;
+  },
+};
+
+export default api; 

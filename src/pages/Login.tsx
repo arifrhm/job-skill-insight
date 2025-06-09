@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { authApi } from '@/lib/api';
+import { authApi, UserLogin } from '@/lib/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +16,12 @@ const Login = () => {
   const navigate = useNavigate();
 
   const loginMutation = useMutation({
-    mutationFn: authApi.login,
+    mutationFn: async (data: UserLogin) => {
+      const loginResponse = await authApi.login(data);
+      // Fetch user data after successful login
+      const userData = await authApi.getCurrentUser();
+      return { ...loginResponse, user: userData };
+    },
     onSuccess: (data) => {
       // Store tokens in localStorage
       localStorage.setItem('access_token', data.access_token);
@@ -31,24 +36,11 @@ const Login = () => {
       navigate('/');
     },
     onError: (error) => {
-      // For demo purposes, simulate successful login
-      const mockUser = {
-        user_id: 1,
-        username: email.split('@')[0],
-        email: email,
-        job_title: "Frontend Developer",
-        skills: ["React", "TypeScript", "JavaScript"]
-      };
-
-      localStorage.setItem('access_token', 'demo_access_token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
       toast({
-        title: "Demo Login",
-        description: "Successfully logged in with demo credentials!"
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to login",
+        variant: "destructive"
       });
-
-      navigate('/');
     }
   });
 

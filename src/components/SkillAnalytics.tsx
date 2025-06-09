@@ -2,13 +2,14 @@ import React from 'react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { JobPosition, SearchFilters } from '../pages/Index';
+import { SearchFilters } from '../pages/Index';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Download, Filter, Check, X } from 'lucide-react';
+import { JobPositionResponse, SkillResponse } from '@/lib/api';
 
 interface SkillAnalyticsProps {
-  results: JobPosition[];
-  currentSkills: string[];
+  results: JobPositionResponse[];
+  currentSkills: SkillResponse[];
   filters: SearchFilters;
   setFilters: (filters: SearchFilters) => void;
 }
@@ -21,10 +22,10 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
 }) => {
   // Calculate skill frequency
   const skillFrequency = results.reduce((acc, position) => {
-    position.skills.forEach(skill => {
+    position.required_skills.forEach(skill => {
       const skillName = skill.skill_name;
       const isUserSkill = currentSkills.some(userSkill => 
-        userSkill.toLowerCase() === skillName.toLowerCase()
+        userSkill.skill_name.toLowerCase() === skillName.toLowerCase()
       );
       
       if (!acc[skillName]) {
@@ -47,34 +48,37 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
 
   // Get all unique skills from results
   const allRequiredSkills = Array.from(new Set(
-    results.flatMap(position => position.skills.map(skill => skill.skill_name))
+    results.flatMap(position => position.required_skills.map(skill => skill.skill_name))
   ));
 
-  // Compare user skills with required skills
-  const skillComparison = allRequiredSkills.map(skill => ({
+  // Calculate skill match percentages
+  const skillMatches = allRequiredSkills.map(skill => ({
     skill,
     isUserSkill: currentSkills.some(userSkill => 
-      userSkill.toLowerCase() === skill.toLowerCase()
+      userSkill.skill_name.toLowerCase() === skill.toLowerCase()
     ),
     count: skillFrequency[skill]?.count || 0
-  })).sort((a, b) => b.count - a.count);
+  }));
+
+  // Sort skills by frequency
+  const sortedSkills = skillMatches.sort((a, b) => b.count - a.count);
 
   const exportResults = () => {
     const csvContent = [
       ['Job Title', 'Match Percentage', 'Required Skills', 'Missing Skills'].join(','),
       ...results.map(position => {
-        const matchingSkills = position.skills.filter(skill => 
-          currentSkills.some(userSkill => userSkill.toLowerCase() === skill.skill_name.toLowerCase())
+        const matchingSkills = position.required_skills.filter(skill => 
+          currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.skill_name.toLowerCase())
         );
-        const missingSkills = position.skills.filter(skill => 
-          !currentSkills.some(userSkill => userSkill.toLowerCase() === skill.skill_name.toLowerCase())
+        const missingSkills = position.required_skills.filter(skill => 
+          !currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.skill_name.toLowerCase())
         );
-        const matchPercentage = Math.round((matchingSkills.length / position.skills.length) * 100);
+        const matchPercentage = Math.round((matchingSkills.length / position.required_skills.length) * 100);
         
         return [
           `"${position.job_title}"`,
           matchPercentage,
-          `"${position.skills.map(s => s.skill_name).join('; ')}"`,
+          `"${position.required_skills.map(s => s.skill_name).join('; ')}"`,
           `"${missingSkills.map(s => s.skill_name).join('; ')}"`,
         ].join(',');
       })
@@ -131,7 +135,7 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">Skill Comparison</h3>
           <div className="space-y-4">
-            {skillComparison.map((skill, index) => (
+            {sortedSkills.map((skill, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
                   {skill.isUserSkill ? (

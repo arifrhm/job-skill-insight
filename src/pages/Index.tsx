@@ -6,19 +6,8 @@ import { useToast } from '../hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { skillsApi } from '@/lib/api';
-
-export interface Skill {
-  skill_id: number;
-  skill_name: string;
-}
-
-export interface JobPosition {
-  position_id: number;
-  job_title: string;
-  job_detail_link: string;
-  skills: Skill[];
-}
+import { skillsApi, jobsApi, SkillResponse, JobPositionResponse } from '@/lib/api';
+import { authApi } from '@/lib/api';
 
 export interface SearchFilters {
   sortBy: 'missingSkills' | 'alphabetical' | 'matchPercentage';
@@ -30,11 +19,11 @@ interface User {
   username: string;
   email: string;
   job_title: string;
-  skills: string[];
+  skills: SkillResponse[];
 }
 
 const Index = () => {
-  const [currentSkills, setCurrentSkills] = useState<string[]>([]);
+  const [currentSkills, setCurrentSkills] = useState<SkillResponse[]>([]);
   const [jobTitle, setJobTitle] = useState('');
   const [filters, setFilters] = useState<SearchFilters>({
     sortBy: 'missingSkills',
@@ -45,19 +34,55 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      // Pre-populate skills if user is logged in
-      if (userData.skills) {
-        setCurrentSkills(userData.skills);
+    const initializeUser = async () => {
+      const storedUser = localStorage.getItem('user');
+      const accessToken = localStorage.getItem('access_token');
+
+      if (accessToken && !storedUser) {
+        try {
+          // If we have a token but no user data, fetch it
+          const userData = await authApi.getCurrentUser();
+          setUser(userData);
+          localStorage.setItem('user', JSON.stringify(userData));
+          
+          // Pre-populate skills if user is logged in
+          if (userData.skills) {
+            setCurrentSkills(userData.skills);
+          }
+          if (userData.job_title) {
+            setJobTitle(userData.job_title);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          // Clear invalid tokens
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user');
+        }
+      } else if (storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          if (userData && typeof userData === 'object') {
+            setUser(userData);
+            // Pre-populate skills if user is logged in
+            if (Array.isArray(userData.skills)) {
+              setCurrentSkills(userData.skills);
+            }
+            if (typeof userData.job_title === 'string') {
+              setJobTitle(userData.job_title);
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          // Clear invalid user data
+          localStorage.removeItem('user');
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+        }
       }
-      if (userData.job_title) {
-        setJobTitle(userData.job_title);
-      }
-    }
+    };
+
+    initializeUser();
   }, []);
 
   const handleLogout = () => {
@@ -75,15 +100,12 @@ const Index = () => {
   };
 
   const { data: results, isLoading, error } = useQuery({
-    queryKey: ['skillRecommendations', jobTitle, currentSkills],
+    queryKey: ['jobRecommendations', jobTitle, currentSkills],
     queryFn: () => {
       if (!jobTitle.trim()) {
         throw new Error('Please enter a job title');
       }
-      return skillsApi.recommendSkills({
-        job_title: jobTitle,
-        current_skills: currentSkills
-      });
+      return jobsApi.getJobRecommendations();
     },
     enabled: shouldFetch && !!jobTitle.trim(),
   });

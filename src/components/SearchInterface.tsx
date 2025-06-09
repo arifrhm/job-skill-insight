@@ -1,24 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Card } from '../components/ui/card';
 import { X, Plus, Search, Loader2 } from 'lucide-react';
+import { skillsApi, jobsApi, SkillResponse as Skill, JobPositionResponse as JobPosition } from '../lib/api';
 
 interface SearchInterfaceProps {
   jobTitle: string;
   setJobTitle: (title: string) => void;
-  currentSkills: string[];
-  setCurrentSkills: (skills: string[]) => void;
+  currentSkills: Skill[];
+  setCurrentSkills: (skills: Skill[]) => void;
   onSearch: () => void;
   loading: boolean;
 }
-
-const popularSkills = [
-  'React', 'TypeScript', 'JavaScript', 'Python', 'Node.js', 'Java', 'AWS',
-  'Docker', 'Kubernetes', 'GraphQL', 'MongoDB', 'PostgreSQL', 'Redux',
-  'Next.js', 'Vue.js', 'Angular', 'Django', 'Flask', 'Spring Boot', 'Git'
-];
 
 const jobSuggestions = [
   'Backend Engineer/Developer',
@@ -41,24 +36,55 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   const [skillInput, setSkillInput] = useState('');
   const [showJobSuggestions, setShowJobSuggestions] = useState(false);
   const [showSkillSuggestions, setShowSkillSuggestions] = useState(false);
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [filteredSkillSuggestions, setFilteredSkillSuggestions] = useState<Skill[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
 
-  const addSkill = (skill: string) => {
-    const trimmedSkill = skill.trim();
-    if (trimmedSkill && !currentSkills.includes(trimmedSkill)) {
-      setCurrentSkills([...currentSkills, trimmedSkill]);
+  useEffect(() => {
+    const fetchSkills = async () => {
+      setIsLoadingSkills(true);
+      try {
+        const response = await skillsApi.getSkills(1, 100); // Get first 100 skills
+        setAvailableSkills(response.items);
+      } catch (error) {
+        console.error('Error fetching skills:', error);
+      } finally {
+        setIsLoadingSkills(false);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  const addSkill = async (skill: Skill) => {
+    try {
+      await skillsApi.addUserSkill(skill.skill_id);
+      setCurrentSkills([...currentSkills, skill]);
       setSkillInput('');
       setShowSkillSuggestions(false);
+    } catch (error) {
+      console.error('Error adding skill:', error);
     }
   };
 
-  const removeSkill = (skillToRemove: string) => {
-    setCurrentSkills(currentSkills.filter(skill => skill !== skillToRemove));
+  const removeSkill = async (skillToRemove: Skill) => {
+    try {
+      await skillsApi.removeUserSkill(skillToRemove.skill_id);
+      setCurrentSkills(currentSkills.filter(skill => skill.skill_id !== skillToRemove.skill_id));
+    } catch (error) {
+      console.error('Error removing skill:', error);
+    }
   };
 
   const handleSkillInputKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      addSkill(skillInput);
+      const matchingSkill = availableSkills.find(
+        skill => skill.skill_name.toLowerCase() === skillInput.toLowerCase()
+      );
+      if (matchingSkill) {
+        addSkill(matchingSkill);
+      }
     }
   };
 
@@ -66,10 +92,13 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     job.toLowerCase().includes(jobTitle.toLowerCase())
   );
 
-  const filteredSkillSuggestions = popularSkills.filter(skill =>
-    skill.toLowerCase().includes(skillInput.toLowerCase()) &&
-    !currentSkills.includes(skill)
-  );
+  useEffect(() => {
+    const filtered = availableSkills.filter(skill =>
+      skill.skill_name.toLowerCase().includes(skillInput.toLowerCase()) &&
+      !currentSkills.some(currentSkill => currentSkill.skill_id === skill.skill_id)
+    );
+    setFilteredSkillSuggestions(filtered);
+  }, [skillInput, availableSkills, currentSkills]);
 
   return (
     <Card className="p-6 mb-8">
@@ -124,26 +153,38 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               onFocus={() => setShowSkillSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSkillSuggestions(false), 200)}
               className="py-3 pr-12"
+              disabled={isLoadingSkills}
             />
             <Button
               type="button"
               size="sm"
               className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-              onClick={() => addSkill(skillInput)}
-              disabled={!skillInput.trim()}
+              onClick={() => {
+                const matchingSkill = availableSkills.find(
+                  skill => skill.skill_name.toLowerCase() === skillInput.toLowerCase()
+                );
+                if (matchingSkill) {
+                  addSkill(matchingSkill);
+                }
+              }}
+              disabled={!skillInput.trim() || isLoadingSkills}
             >
-              <Plus className="h-4 w-4" />
+              {isLoadingSkills ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
             </Button>
 
             {showSkillSuggestions && filteredSkillSuggestions.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                {filteredSkillSuggestions.map((skill, index) => (
+                {filteredSkillSuggestions.map((skill) => (
                   <button
-                    key={index}
+                    key={skill.skill_id}
                     className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
                     onClick={() => addSkill(skill)}
                   >
-                    {skill}
+                    {skill.skill_name}
                   </button>
                 ))}
               </div>
@@ -152,13 +193,13 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
 
           {/* Current Skills Display */}
           <div className="flex flex-wrap gap-2 mt-3">
-            {currentSkills.map((skill, index) => (
+            {currentSkills.map((skill) => (
               <Badge
-                key={index}
+                key={skill.skill_id}
                 variant="secondary"
                 className="bg-green-100 text-green-800 hover:bg-green-200 transition-colors px-3 py-1 text-sm"
               >
-                {skill}
+                {skill.skill_name}
                 <button
                   onClick={() => removeSkill(skill)}
                   className="ml-2 hover:text-green-900"
@@ -173,17 +214,18 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
           <div className="mt-4">
             <p className="text-sm text-gray-600 mb-2">Popular skills:</p>
             <div className="flex flex-wrap gap-2">
-              {popularSkills.slice(0, 10).map((skill, index) => (
+              {availableSkills.slice(0, 10).map((skill) => (
                 <button
-                  key={index}
+                  key={skill.skill_id}
                   onClick={() => addSkill(skill)}
-                  disabled={currentSkills.includes(skill)}
-                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${currentSkills.includes(skill)
+                  disabled={currentSkills.some(s => s.skill_id === skill.skill_id)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    currentSkills.some(s => s.skill_id === skill.skill_id)
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                       : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300'
-                    }`}
+                  }`}
                 >
-                  {skill}
+                  {skill.skill_name}
                 </button>
               ))}
             </div>
