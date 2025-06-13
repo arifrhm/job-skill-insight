@@ -1,11 +1,6 @@
 import axios from 'axios';
 
-// Debug environment variables
-console.log("VITE_API_BASE_URL:", import.meta.env.VITE_API_BASE_URL);
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-console.log("Final API_BASE_URL:", API_BASE_URL);
 
 // Create axios instance with base URL
 const api = axios.create({
@@ -114,6 +109,36 @@ export interface PaginatedResponse<T> {
   items: T[];
 }
 
+// Job Recommendation Types
+interface SkillInfo {
+  skill_id: number;
+  skill_name: string;
+}
+
+interface JobSkills {
+  matching: SkillInfo[];
+  recommended: SkillInfo[];
+}
+
+interface JobRecommendation {
+  position_id: number;
+  job_title: string;
+  log_likelihood: number;
+  skills: JobSkills;
+}
+
+interface JobScore {
+  job_id: number;
+  title: string;
+  skills: string[];
+  lls_score: number;
+}
+
+export interface TopRecommendationResponse {
+  job: JobRecommendation;
+  all_job_scores: JobScore[];
+}
+
 // Auth API
 export const authApi = {
   register: async (data: UserCreate) => {
@@ -189,6 +214,11 @@ export const jobsApi = {
 
   getJobRecommendations: async () => {
     const response = await api.get<JobPositionResponse[]>('/jobs/recommendations');
+    return response.data;
+  },
+
+  getTopRecommendation: async () => {
+    const response = await api.get<TopRecommendationResponse>('/jobs/top-recommendation');
     return response.data;
   },
 };

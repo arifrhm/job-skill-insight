@@ -96,7 +96,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
     const filtered = availableSkills.filter(skill =>
       skill.skill_name.toLowerCase().includes(skillInput.toLowerCase()) &&
       !currentSkills.some(currentSkill => currentSkill.skill_id === skill.skill_id)
-    );
+  );
     setFilteredSkillSuggestions(filtered);
   }, [skillInput, availableSkills, currentSkills]);
 
@@ -118,7 +118,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               onBlur={() => setTimeout(() => setShowJobSuggestions(false), 200)}
               className="py-3"
             />
-
+            
             {showJobSuggestions && filteredJobSuggestions.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {filteredJobSuggestions.map((job, index) => (
@@ -172,10 +172,10 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
               {isLoadingSkills ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               )}
             </Button>
-
+            
             {showSkillSuggestions && filteredSkillSuggestions.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
                 {filteredSkillSuggestions.map((skill) => (

@@ -6,7 +6,7 @@ import { useToast } from '../hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { skillsApi, jobsApi, SkillResponse, JobPositionResponse } from '@/lib/api';
+import { skillsApi, jobsApi, SkillResponse, JobPositionResponse, TopRecommendationResponse } from '@/lib/api';
 import { authApi } from '@/lib/api';
 
 export interface SearchFilters {
@@ -35,23 +35,23 @@ const Index = () => {
 
   useEffect(() => {
     const initializeUser = async () => {
-      const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem('user');
       const accessToken = localStorage.getItem('access_token');
 
       if (accessToken && !storedUser) {
         try {
           // If we have a token but no user data, fetch it
           const userData = await authApi.getCurrentUser();
-          setUser(userData);
+      setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
           
-          // Pre-populate skills if user is logged in
-          if (userData.skills) {
-            setCurrentSkills(userData.skills);
-          }
-          if (userData.job_title) {
-            setJobTitle(userData.job_title);
-          }
+      // Pre-populate skills if user is logged in
+      if (userData.skills) {
+        setCurrentSkills(userData.skills);
+      }
+      if (userData.job_title) {
+        setJobTitle(userData.job_title);
+      }
         } catch (error) {
           console.error('Error fetching user data:', error);
           // Clear invalid tokens
@@ -99,13 +99,13 @@ const Index = () => {
     });
   };
 
-  const { data: results, isLoading, error } = useQuery({
+  const { data: recommendation, isLoading, error } = useQuery({
     queryKey: ['jobRecommendations', jobTitle, currentSkills],
     queryFn: () => {
       if (!jobTitle.trim()) {
         throw new Error('Please enter a job title');
       }
-      return jobsApi.getJobRecommendations();
+      return jobsApi.getTopRecommendation();
     },
     enabled: shouldFetch && !!jobTitle.trim(),
   });
@@ -185,12 +185,13 @@ const Index = () => {
         )}
 
         {/* Analytics Dashboard */}
-        {results && results.length > 0 && (
+        {recommendation && recommendation.all_job_scores.length > 0 && (
           <SkillAnalytics
-            results={results}
+            results={recommendation.all_job_scores}
             currentSkills={currentSkills}
             filters={filters}
             setFilters={setFilters}
+            topRecommendation={recommendation}
           />
         )}
       </div>

@@ -5,25 +5,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { SearchFilters } from '../pages/Index';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Download, Filter, Check, X } from 'lucide-react';
-import { JobPositionResponse, SkillResponse } from '@/lib/api';
+import { SkillResponse, TopRecommendationResponse } from '@/lib/api';
+
+interface JobScore {
+  job_id: number;
+  title: string;
+  skills: string[];
+  lls_score: number;
+}
 
 interface SkillAnalyticsProps {
-  results: JobPositionResponse[];
+  results: JobScore[];
   currentSkills: SkillResponse[];
   filters: SearchFilters;
   setFilters: (filters: SearchFilters) => void;
+  topRecommendation?: TopRecommendationResponse;
 }
 
 export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
   results,
   currentSkills,
   filters,
-  setFilters
+  setFilters,
+  topRecommendation
 }) => {
   // Calculate skill frequency
   const skillFrequency = results.reduce((acc, position) => {
-    position.required_skills.forEach(skill => {
-      const skillName = skill.skill_name;
+    position.skills.forEach(skill => {
+      const skillName = skill;
       const isUserSkill = currentSkills.some(userSkill => 
         userSkill.skill_name.toLowerCase() === skillName.toLowerCase()
       );
@@ -48,7 +57,7 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
 
   // Get all unique skills from results
   const allRequiredSkills = Array.from(new Set(
-    results.flatMap(position => position.required_skills.map(skill => skill.skill_name))
+    results.flatMap(position => position.skills)
   ));
 
   // Calculate skill match percentages
@@ -67,19 +76,19 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
     const csvContent = [
       ['Job Title', 'Match Percentage', 'Required Skills', 'Missing Skills'].join(','),
       ...results.map(position => {
-        const matchingSkills = position.required_skills.filter(skill => 
-          currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.skill_name.toLowerCase())
+        const matchingSkills = position.skills.filter(skill => 
+          currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.toLowerCase())
         );
-        const missingSkills = position.required_skills.filter(skill => 
-          !currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.skill_name.toLowerCase())
+        const missingSkills = position.skills.filter(skill => 
+          !currentSkills.some(userSkill => userSkill.skill_name.toLowerCase() === skill.toLowerCase())
         );
-        const matchPercentage = Math.round((matchingSkills.length / position.required_skills.length) * 100);
+        const matchPercentage = Math.round((matchingSkills.length / position.skills.length) * 100);
         
         return [
-          `"${position.job_title}"`,
+          `"${position.title}"`,
           matchPercentage,
-          `"${position.required_skills.map(s => s.skill_name).join('; ')}"`,
-          `"${missingSkills.map(s => s.skill_name).join('; ')}"`,
+          `"${position.skills.join('; ')}"`,
+          `"${missingSkills.join('; ')}"`,
         ].join(',');
       })
     ].join('\n');
@@ -94,72 +103,49 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
   };
 
   return (
-    <div className="mb-8 space-y-6">
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* Skill Frequency Chart */}
+    <div className="space-y-8">
+      {/* Top Recommendation Card */}
+      {topRecommendation && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Most In-Demand Skills</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={skillData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="skill" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                fontSize={12}
-              />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" name="Job Count">
-                {skillData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="flex items-center gap-4 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span>Skills you have</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span>Skills to learn</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Skill Comparison */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Skill Comparison</h3>
-          <div className="space-y-4">
-            {sortedSkills.map((skill, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  {skill.isUserSkill ? (
-                    <Check className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <X className="h-5 w-5 text-red-500" />
-                  )}
-                  <span className="font-medium">{skill.skill}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">
-                    Required in {skill.count} {skill.count === 1 ? 'job' : 'jobs'}
-                  </span>
-                  <span className={`text-sm font-medium ${
-                    skill.isUserSkill ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {skill.isUserSkill ? 'You have this skill' : 'Skill to learn'}
-                  </span>
-                </div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">Best Match: {topRecommendation.job.job_title}</h2>
+              <div className="text-lg text-blue-600 font-semibold">
+                Match Score: {topRecommendation.job.log_likelihood.toFixed(2)}
               </div>
-            ))}
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Recommended Skills to Learn</h3>
+              <div className="flex flex-wrap gap-2">
+                {topRecommendation.job.skills.recommended.map((skill) => (
+                  <span
+                    key={skill.skill_id}
+                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                  >
+                    {skill.skill_name}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Your Matching Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {topRecommendation.job.skills.matching.map((skill) => (
+                  <span
+                    key={skill.skill_id}
+                    className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+                  >
+                    {skill.skill_name}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </Card>
-      </div>
+      )}
+
     </div>
   );
 };
