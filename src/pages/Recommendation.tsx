@@ -71,7 +71,7 @@ export default function Recommendation() {
         <CardContent>
           <div className="space-y-6">
             {/* Matching Skills */}
-            <div>
+            {/* <div>
               <h3 className="text-lg font-semibold mb-2">Your Matching Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {job.skills.matching.map((skill) => (
@@ -83,7 +83,7 @@ export default function Recommendation() {
                   </span>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Recommended Skills */}
             <div>

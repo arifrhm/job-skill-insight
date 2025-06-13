@@ -75,7 +75,7 @@ export default function SkillRecommendation({ onSkillSelect }: SkillRecommendati
             </div>
           </div>
 
-          <div>
+          {/* <div>
             <h3 className="font-semibold mb-2">Your Matching Skills</h3>
             <div className="flex flex-wrap gap-2">
               {recommendation.job.skills.matching.map((skill) => (
@@ -87,7 +87,7 @@ export default function SkillRecommendation({ onSkillSelect }: SkillRecommendati
                 </span>
               ))}
             </div>
-          </div>
+          </div> */}
 
           <div className="text-sm text-gray-500">
             Match Score: {recommendation.job.log_likelihood.toFixed(2)}

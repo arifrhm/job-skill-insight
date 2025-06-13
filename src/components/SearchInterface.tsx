@@ -211,7 +211,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
           </div>
 
           {/* Popular Skills */}
-          <div className="mt-4">
+          {/* <div className="mt-4">
             <p className="text-sm text-gray-600 mb-2">Popular skills:</p>
             <div className="flex flex-wrap gap-2">
               {availableSkills.slice(0, 10).map((skill) => (
@@ -229,7 +229,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Search Button */}

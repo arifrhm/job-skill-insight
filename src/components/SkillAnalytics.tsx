@@ -129,7 +129,7 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <h3 className="text-lg font-semibold mb-3">Your Matching Skills</h3>
               <div className="flex flex-wrap gap-2">
                 {topRecommendation.job.skills.matching.map((skill) => (
@@ -141,7 +141,7 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
                   </span>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </Card>
       )}
