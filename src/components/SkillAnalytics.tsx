@@ -29,6 +29,15 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
   setFilters,
   topRecommendation
 }) => {
+  // Calculate lls_max and lls_min for percentage
+  const llsScores = results.map(j => j.lls_score);
+  const lls_max = llsScores.length > 0 ? Math.max(...llsScores) : 1;
+  const lls_min = llsScores.length > 0 ? Math.min(...llsScores) : 0;
+  const getPercentage = (score: number) => {
+    if (lls_max === lls_min) return 100;
+    return ((score - lls_min) / (lls_max - lls_min)) * 100;
+  };
+
   // Calculate skill frequency
   const skillFrequency = results.reduce((acc, position) => {
     position.skills.forEach(skill => {
@@ -110,8 +119,9 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2">Best Match: {topRecommendation.job.job_title}</h2>
-              <div className="text-lg text-blue-600 font-semibold">
-                Match Score: {topRecommendation.job.log_likelihood.toFixed(2)}
+              <div className="text-lg text-blue-600 font-semibold flex flex-col">
+                <span>Matching Score: {topRecommendation.job.log_likelihood.toFixed(2)}</span>
+                <span>({getPercentage(topRecommendation.job.log_likelihood).toFixed(2)}%)</span>
               </div>
             </div>
 

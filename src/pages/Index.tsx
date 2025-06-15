@@ -8,6 +8,8 @@ import { LogOut, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { skillsApi, jobsApi, SkillResponse, JobPositionResponse, TopRecommendationResponse } from '@/lib/api';
 import { authApi } from '@/lib/api';
+import JobRankingCard from '../components/JobRankingCard';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 export interface SearchFilters {
   sortBy: 'missingSkills' | 'alphabetical' | 'matchPercentage';
@@ -35,23 +37,23 @@ const Index = () => {
 
   useEffect(() => {
     const initializeUser = async () => {
-    const storedUser = localStorage.getItem('user');
+      const storedUser = localStorage.getItem('user');
       const accessToken = localStorage.getItem('access_token');
 
       if (accessToken && !storedUser) {
         try {
           // If we have a token but no user data, fetch it
           const userData = await authApi.getCurrentUser();
-      setUser(userData);
+          setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
-          
-      // Pre-populate skills if user is logged in
-      if (userData.skills) {
-        setCurrentSkills(userData.skills);
-      }
-      if (userData.job_title) {
-        setJobTitle(userData.job_title);
-      }
+
+          // Pre-populate skills if user is logged in
+          if (userData.skills) {
+            setCurrentSkills(userData.skills);
+          }
+          if (userData.job_title) {
+            setJobTitle(userData.job_title);
+          }
         } catch (error) {
           console.error('Error fetching user data:', error);
           // Clear invalid tokens
@@ -128,7 +130,7 @@ const Index = () => {
       <nav className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-xl font-bold text-gray-900">Skill Recommender</h1>
-          
+
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-3">
@@ -184,16 +186,27 @@ const Index = () => {
           </div>
         )}
 
-        {/* Analytics Dashboard */}
+        {/* Analytics Dashboard including best match */}
         {recommendation && recommendation.all_job_scores.length > 0 && (
-          <SkillAnalytics
-            results={recommendation.all_job_scores}
-            currentSkills={currentSkills}
-            filters={filters}
-            setFilters={setFilters}
-            topRecommendation={recommendation}
-          />
+          <div className="mt-8">
+            <SkillAnalytics
+              results={recommendation.all_job_scores}
+              currentSkills={currentSkills}
+              filters={filters}
+              setFilters={setFilters}
+              topRecommendation={recommendation}
+            />
+          </div>
         )}
+
+        {/* Job Rankings */}
+        {recommendation && recommendation.all_job_scores.length > 0 && (
+          <div className="mt-8">
+            <JobRankingCard jobScores={recommendation.all_job_scores} />
+          </div>
+        )}
+
+
       </div>
     </div>
   );

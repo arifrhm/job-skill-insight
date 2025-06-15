@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Loader2 } from 'lucide-react';
 import type { TopRecommendationResponse } from '../lib/api';
+import JobRankingCard from '../components/JobRankingCard';
 
 export default function Recommendation() {
   const [recommendation, setRecommendation] = useState<TopRecommendationResponse | null>(null);
@@ -70,21 +71,6 @@ export default function Recommendation() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Matching Skills */}
-            {/* <div>
-              <h3 className="text-lg font-semibold mb-2">Your Matching Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                {job.skills.matching.map((skill) => (
-                  <span
-                    key={skill.skill_id}
-                    className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
-                  >
-                    {skill.skill_name}
-                  </span>
-                ))}
-              </div>
-            </div> */}
-
             {/* Recommended Skills */}
             <div>
               <h3 className="text-lg font-semibold mb-2">Skills to Learn</h3>
@@ -103,34 +89,8 @@ export default function Recommendation() {
         </CardContent>
       </Card>
 
-      {/* Other Job Recommendations */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Other Job Opportunities</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {all_job_scores.slice(1).map((jobScore) => (
-            <Card key={jobScore.job_id}>
-              <CardHeader>
-                <CardTitle>{jobScore.title}</CardTitle>
-                <CardDescription>
-                  Match Score: {jobScore.lls_score.toFixed(2)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {jobScore.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Top 10 Job Recommendations */}
+      <JobRankingCard jobScores={all_job_scores} />
 
       <div className="flex justify-center mt-8">
         <Button onClick={() => navigate('/profile')}>
