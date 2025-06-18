@@ -18,7 +18,7 @@ export interface SearchFilters {
 
 interface User {
   user_id: number;
-  username: string;
+  full_name: string;
   email: string;
   job_title: string;
   skills: SkillResponse[];
@@ -136,7 +136,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <User className="w-4 h-4" />
-                  <span>Welcome, {user.username}</span>
+                  <span>Welcome, {user.full_name}</span>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />

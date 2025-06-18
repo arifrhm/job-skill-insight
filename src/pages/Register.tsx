@@ -11,7 +11,7 @@ import { authApi, skillsApi, SkillResponse } from '@/lib/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    full_name: '',
     email: '',
     password: '',
     job_title: ''
@@ -110,7 +110,7 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.email || !formData.password || !formData.job_title) {
+    if (!formData.full_name || !formData.email || !formData.password || !formData.job_title) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -140,7 +140,7 @@ const Register = () => {
     const skill_ids = finalSkills.map(s => s.skill_id);
     // Register
     registerMutation.mutate({
-      username: formData.username,
+      full_name: formData.full_name,
       email: formData.email,
       password: formData.password,
       job_title: formData.job_title,
@@ -180,13 +180,13 @@ const Register = () => {
         <form onSubmit={handleSubmit} autoComplete="off">
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="full_name">Full Name</Label>
               <Input
-                id="username"
-                name="username"
+                id="full_name"
+                name="full_name"
                 type="text"
-                placeholder="Enter your username"
-                value={formData.username}
+                placeholder="Enter your full name"
+                value={formData.full_name}
                 onChange={handleChange}
                 required
                 minLength={3}

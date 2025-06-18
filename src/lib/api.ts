@@ -73,7 +73,7 @@ export interface SkillResponse {
 }
 
 export interface UserResponse {
-  username: string;
+  full_name: string;
   email: string;
   job_title: string;
   user_id: number;
@@ -81,7 +81,7 @@ export interface UserResponse {
 }
 
 export interface UserCreate {
-  username: string;
+  full_name: string;
   email: string;
   job_title: string;
   password: string;
