@@ -124,6 +124,7 @@ interface JobRecommendation {
   position_id: number;
   job_title: string;
   log_likelihood: number;
+  similarity_score?: number;
   skills: JobSkills;
 }
 
@@ -132,11 +133,18 @@ interface JobScore {
   title: string;
   skills: string[];
   lls_score: number;
+  cosine_score?: number;
+  algorithm?: string;
 }
 
 export interface TopRecommendationResponse {
+  algorithm: string;
+  description: string;
   job: JobRecommendation;
   all_job_scores: JobScore[];
+  user_skills: string[];
+  total_jobs_analyzed: number;
+  recommendation_date: string;
 }
 
 // Auth API
@@ -219,6 +227,16 @@ export const jobsApi = {
 
   getTopRecommendation: async () => {
     const response = await api.get<TopRecommendationResponse>('/jobs/top-recommendation');
+    return response.data;
+  },
+
+  getLLRRecommendation: async () => {
+    const response = await api.get<TopRecommendationResponse>('/jobs/llr-recommendation');
+    return response.data;
+  },
+
+  getCosineRecommendation: async () => {
+    const response = await api.get<TopRecommendationResponse>('/jobs/cosine-recommendation');
     return response.data;
   },
 };

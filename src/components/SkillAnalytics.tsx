@@ -11,7 +11,9 @@ interface JobScore {
   job_id: number;
   title: string;
   skills: string[];
-  lls_score: number;
+  lls_score?: number;
+  cosine_score?: number;
+  algorithm?: string;
 }
 
 interface SkillAnalyticsProps {
@@ -29,13 +31,21 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
   setFilters,
   topRecommendation
 }) => {
-  // Calculate lls_max and lls_min for percentage
-  const llsScores = results.map(j => j.lls_score);
-  const lls_max = llsScores.length > 0 ? Math.max(...llsScores) : 1;
-  const lls_min = llsScores.length > 0 ? Math.min(...llsScores) : 0;
+  // Get the appropriate score field based on algorithm
+  const getScore = (job: JobScore) => {
+    if (job.algorithm === 'cosine_similarity' && job.cosine_score !== undefined) {
+      return job.cosine_score;
+    }
+    return job.lls_score || 0;
+  };
+
+  // Calculate score_max and score_min for percentage
+  const scores = results.map(j => getScore(j));
+  const score_max = scores.length > 0 ? Math.max(...scores) : 1;
+  const score_min = scores.length > 0 ? Math.min(...scores) : 0;
   const getPercentage = (score: number) => {
-    if (lls_max === lls_min) return 100;
-    return ((score - lls_min) / (lls_max - lls_min)) * 100;
+    if (score_max === score_min) return 100;
+    return ((score - score_min) / (score_max - score_min)) * 100;
   };
 
   // Calculate skill frequency
@@ -119,9 +129,22 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold mb-2">Best Match: {topRecommendation.job.job_title}</h2>
+              <div className="text-sm text-gray-600 mb-2">
+                Algorithm: {topRecommendation.algorithm === 'llr_similarity' ? 'Log Likelihood Ratio (LLR)' : 'Cosine Similarity'}
+              </div>
               <div className="text-lg text-blue-600 font-semibold flex flex-col">
-                <span>Matching Score: {topRecommendation.job.log_likelihood.toFixed(2)}</span>
-                <span>({getPercentage(topRecommendation.job.log_likelihood).toFixed(2)}%)</span>
+                <span>
+                  {topRecommendation.algorithm === 'llr_similarity' ? 'LLR Score' : 'Cosine Score'}: {
+                    topRecommendation.algorithm === 'llr_similarity' 
+                      ? topRecommendation.job.log_likelihood.toFixed(2)
+                      : topRecommendation.job.similarity_score?.toFixed(4) || 'N/A'
+                  }
+                </span>
+                <span>({getPercentage(
+                  topRecommendation.algorithm === 'llr_similarity' 
+                    ? topRecommendation.job.log_likelihood
+                    : topRecommendation.job.similarity_score || 0
+                ).toFixed(2)}%)</span>
               </div>
             </div>
 

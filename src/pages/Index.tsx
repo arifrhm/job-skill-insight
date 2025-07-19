@@ -32,7 +32,9 @@ const Index = () => {
     showOnlyMissing: false
   });
   const [user, setUser] = useState<User | null>(null);
-  const [shouldFetch, setShouldFetch] = useState(false);
+  const [shouldFetchLLR, setShouldFetchLLR] = useState(false);
+  const [shouldFetchCosine, setShouldFetchCosine] = useState(false);
+  const [currentAlgorithm, setCurrentAlgorithm] = useState<'llr' | 'cosine' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -94,25 +96,38 @@ const Index = () => {
     setUser(null);
     setCurrentSkills([]);
     setJobTitle('');
-    setShouldFetch(false);
+    setShouldFetchLLR(false);
+    setShouldFetchCosine(false);
+    setCurrentAlgorithm(null);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out"
     });
   };
 
-  const { data: recommendation, isLoading, error } = useQuery({
-    queryKey: ['jobRecommendations', jobTitle, currentSkills],
+  const { data: recommendationLLR, isLoading: isLoadingLLR, error: errorLLR } = useQuery({
+    queryKey: ['jobRecommendationsLLR', jobTitle, currentSkills],
     queryFn: () => {
       if (!jobTitle.trim()) {
         throw new Error('Please enter a job title');
       }
-      return jobsApi.getTopRecommendation();
+      return jobsApi.getLLRRecommendation();
     },
-    enabled: shouldFetch && !!jobTitle.trim(),
+    enabled: shouldFetchLLR && !!jobTitle.trim(),
   });
 
-  const handleSearch = () => {
+  const { data: recommendationCosine, isLoading: isLoadingCosine, error: errorCosine } = useQuery({
+    queryKey: ['jobRecommendationsCosine', jobTitle, currentSkills],
+    queryFn: () => {
+      if (!jobTitle.trim()) {
+        throw new Error('Please enter a job title');
+      }
+      return jobsApi.getCosineRecommendation();
+    },
+    enabled: shouldFetchCosine && !!jobTitle.trim(),
+  });
+
+  const handleLLRSearch = () => {
     if (!jobTitle.trim()) {
       toast({
         title: "Error",
@@ -121,7 +136,23 @@ const Index = () => {
       });
       return;
     }
-    setShouldFetch(true);
+    setShouldFetchLLR(true);
+    setShouldFetchCosine(false);
+    setCurrentAlgorithm('llr');
+  };
+
+  const handleCosineSearch = () => {
+    if (!jobTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a job title",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShouldFetchCosine(true);
+    setShouldFetchLLR(false);
+    setCurrentAlgorithm('cosine');
   };
 
   return (
@@ -174,35 +205,58 @@ const Index = () => {
           setJobTitle={setJobTitle}
           currentSkills={currentSkills}
           setCurrentSkills={setCurrentSkills}
-          onSearch={handleSearch}
-          loading={isLoading}
+          onLLRSearch={handleLLRSearch}
+          onCosineSearch={handleCosineSearch}
+          loading={isLoadingLLR || isLoadingCosine}
         />
 
         {/* Error Message */}
-        {error && (
+        {errorLLR && currentAlgorithm === 'llr' && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-800">
             <p className="font-medium">Error</p>
-            <p className="text-sm">{error.message}</p>
+            <p className="text-sm">{errorLLR.message}</p>
+          </div>
+        )}
+        {errorCosine && currentAlgorithm === 'cosine' && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-800">
+            <p className="font-medium">Error</p>
+            <p className="text-sm">{errorCosine.message}</p>
           </div>
         )}
 
         {/* Analytics Dashboard including best match */}
-        {recommendation && recommendation.all_job_scores.length > 0 && (
+        {recommendationLLR && recommendationLLR.all_job_scores.length > 0 && currentAlgorithm === 'llr' && (
           <div className="mt-8">
             <SkillAnalytics
-              results={recommendation.all_job_scores}
+              results={recommendationLLR.all_job_scores}
               currentSkills={currentSkills}
               filters={filters}
               setFilters={setFilters}
-              topRecommendation={recommendation}
+              topRecommendation={recommendationLLR}
+            />
+          </div>
+        )}
+        {recommendationCosine && recommendationCosine.all_job_scores.length > 0 && currentAlgorithm === 'cosine' && (
+          <div className="mt-8">
+            <SkillAnalytics
+              results={recommendationCosine.all_job_scores}
+              currentSkills={currentSkills}
+              filters={filters}
+              setFilters={setFilters}
+              topRecommendation={recommendationCosine}
             />
           </div>
         )}
 
         {/* Job Rankings */}
-        {recommendation && recommendation.all_job_scores.length > 0 && (
+        {recommendationLLR && recommendationLLR.all_job_scores.length > 0 && currentAlgorithm === 'llr' && (
           <div className="mt-8">
-            <JobRankingCard jobScores={recommendation.all_job_scores} />
+            <JobRankingCard jobScores={recommendationLLR.all_job_scores} />
+          </div>
+        )}
+        {recommendationCosine && recommendationCosine.all_job_scores.length > 0 && currentAlgorithm === 'cosine' && (
+          <div className="mt-8">
+            <JobRankingCard jobScores={recommendationCosine.all_job_scores} />
           </div>
         )}
 

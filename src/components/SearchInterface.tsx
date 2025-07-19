@@ -11,7 +11,8 @@ interface SearchInterfaceProps {
   setJobTitle: (title: string) => void;
   currentSkills: Skill[];
   setCurrentSkills: (skills: Skill[]) => void;
-  onSearch: () => void;
+  onLLRSearch: () => void;
+  onCosineSearch: () => void;
   loading: boolean;
 }
 
@@ -30,7 +31,8 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   setJobTitle,
   currentSkills,
   setCurrentSkills,
-  onSearch,
+  onLLRSearch,
+  onCosineSearch,
   loading
 }) => {
   const [skillInput, setSkillInput] = useState('');
@@ -232,24 +234,44 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
           </div> */}
         </div>
 
-        {/* Search Button */}
-        <Button
-          onClick={onSearch}
-          disabled={loading || !jobTitle.trim()}
-          className="w-full py-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02]"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Analyzing Skills...
-            </>
-          ) : (
-            <>
-              <Search className="mr-2 h-5 w-5" />
-              Find Skill Recommendations
-            </>
-          )}
-        </Button>
+        {/* Search Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            onClick={onLLRSearch}
+            disabled={loading || !jobTitle.trim()}
+            className="py-4 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Search className="mr-2 h-5 w-5" />
+                LLR Recommendations
+              </>
+            )}
+          </Button>
+          
+          <Button
+            onClick={onCosineSearch}
+            disabled={loading || !jobTitle.trim()}
+            className="py-4 text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02]"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Search className="mr-2 h-5 w-5" />
+                Cosine Similarity
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </Card>
   );

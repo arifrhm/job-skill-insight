@@ -6,7 +6,9 @@ interface JobScore {
   job_id: number;
   title: string;
   skills: string[];
-  lls_score: number;
+  lls_score?: number;
+  cosine_score?: number;
+  algorithm?: string;
 }
 
 interface JobRankingCardProps {
@@ -16,14 +18,31 @@ interface JobRankingCardProps {
 const JobRankingCard: React.FC<JobRankingCardProps> = ({ jobScores }) => {
   if (jobScores.length === 0) return null;
 
-  // Cari lls_max dan lls_min
-  const lls_max = Math.max(...jobScores.map(j => j.lls_score));
-  const lls_min = Math.min(...jobScores.map(j => j.lls_score));
+  // Get the appropriate score field based on algorithm
+  const getScore = (job: JobScore) => {
+    if (job.algorithm === 'cosine_similarity' && job.cosine_score !== undefined) {
+      return job.cosine_score;
+    }
+    return job.lls_score || 0;
+  };
+
+  // Cari score_max dan score_min
+  const scores = jobScores.map(j => getScore(j));
+  const score_max = Math.max(...scores);
+  const score_min = Math.min(...scores);
 
   // Fungsi untuk hitung persentase
   const getPercentage = (score: number) => {
-    if (lls_max === lls_min) return 100;
-    return ((score - lls_min) / (lls_max - lls_min)) * 100;
+    if (score_max === score_min) return 100;
+    return ((score - score_min) / (score_max - score_min)) * 100;
+  };
+
+  // Get score label based on algorithm
+  const getScoreLabel = (job: JobScore) => {
+    if (job.algorithm === 'cosine_similarity') {
+      return 'Cosine Score';
+    }
+    return 'LLR Score';
   };
 
   return (
@@ -33,36 +52,30 @@ const JobRankingCard: React.FC<JobRankingCardProps> = ({ jobScores }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {jobScores.map((job, index) => (
-            <div
-              key={job.job_id}
-              className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-semibold text-primary">
-                    #{index + 1}
-                  </span>
-                  <h3 className="text-lg font-semibold">{job.title}</h3>
-                </div>
-                <div className="text-sm font-medium text-muted-foreground flex flex-col items-end">
-                  <span>Matching Score: {job.lls_score.toFixed(2)}</span>
-                  <span>({getPercentage(job.lls_score).toFixed(2)}%)</span>
+          {jobScores.map((job, index) => {
+            const score = getScore(job);
+            const scoreLabel = getScoreLabel(job);
+            
+            return (
+              <div
+                key={job.job_id}
+                className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-semibold text-primary">
+                      #{index + 1}
+                    </span>
+                    <h3 className="text-lg font-semibold">{job.title}</h3>
+                  </div>
+                  <div className="text-sm font-medium text-muted-foreground flex flex-col items-end">
+                    <span>{scoreLabel}: {score.toFixed(4)}</span>
+                    <span>({getPercentage(score).toFixed(2)}%)</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {job.skills.map((skill) => (
-                  <Badge
-                    key={skill}
-                    variant="secondary"
-                    className="text-xs"
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
