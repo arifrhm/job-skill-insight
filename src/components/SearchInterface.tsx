@@ -249,7 +249,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
             ) : (
               <>
                 <Search className="mr-2 h-5 w-5" />
-                LLR Recommendations
+                LLS Similarity
               </>
             )}
           </Button>
