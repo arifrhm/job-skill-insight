@@ -235,6 +235,11 @@ export const jobsApi = {
     return response.data;
   },
 
+  getLLSRecommendation: async () => {
+    const response = await api.get<TopRecommendationResponse>('/jobs/llr-recommendation');
+    return response.data;
+  },
+
   getCosineRecommendation: async () => {
     const response = await api.get<TopRecommendationResponse>('/jobs/cosine-recommendation');
     return response.data;

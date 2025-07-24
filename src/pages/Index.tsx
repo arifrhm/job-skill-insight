@@ -32,9 +32,9 @@ const Index = () => {
     showOnlyMissing: false
   });
   const [user, setUser] = useState<User | null>(null);
-  const [shouldFetchLLR, setShouldFetchLLR] = useState(false);
+  const [shouldFetchLLS, setShouldFetchLLS] = useState(false);
   const [shouldFetchCosine, setShouldFetchCosine] = useState(false);
-  const [currentAlgorithm, setCurrentAlgorithm] = useState<'llr' | 'cosine' | null>(null);
+  const [currentAlgorithm, setCurrentAlgorithm] = useState<'lls' | 'cosine' | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -96,7 +96,7 @@ const Index = () => {
     setUser(null);
     setCurrentSkills([]);
     setJobTitle('');
-    setShouldFetchLLR(false);
+    setShouldFetchLLS(false);
     setShouldFetchCosine(false);
     setCurrentAlgorithm(null);
     toast({
@@ -105,15 +105,15 @@ const Index = () => {
     });
   };
 
-  const { data: recommendationLLR, isLoading: isLoadingLLR, error: errorLLR } = useQuery({
-    queryKey: ['jobRecommendationsLLR', jobTitle, currentSkills],
+  const { data: recommendationLLS, isLoading: isLoadingLLS, error: errorLLS } = useQuery({
+    queryKey: ['jobRecommendationsLLS', jobTitle, currentSkills],
     queryFn: () => {
       if (!jobTitle.trim()) {
         throw new Error('Please enter a job title');
       }
-      return jobsApi.getLLRRecommendation();
+      return jobsApi.getLLSRecommendation();
     },
-    enabled: shouldFetchLLR && !!jobTitle.trim(),
+    enabled: shouldFetchLLS && !!jobTitle.trim(),
   });
 
   const { data: recommendationCosine, isLoading: isLoadingCosine, error: errorCosine } = useQuery({
@@ -127,7 +127,7 @@ const Index = () => {
     enabled: shouldFetchCosine && !!jobTitle.trim(),
   });
 
-  const handleLLRSearch = () => {
+  const handleLLSSearch = () => {
     if (!jobTitle.trim()) {
       toast({
         title: "Error",
@@ -136,9 +136,9 @@ const Index = () => {
       });
       return;
     }
-    setShouldFetchLLR(true);
+    setShouldFetchLLS(true);
     setShouldFetchCosine(false);
-    setCurrentAlgorithm('llr');
+    setCurrentAlgorithm('lls');
   };
 
   const handleCosineSearch = () => {
@@ -151,7 +151,7 @@ const Index = () => {
       return;
     }
     setShouldFetchCosine(true);
-    setShouldFetchLLR(false);
+    setShouldFetchLLS(false);
     setCurrentAlgorithm('cosine');
   };
 
@@ -205,16 +205,16 @@ const Index = () => {
           setJobTitle={setJobTitle}
           currentSkills={currentSkills}
           setCurrentSkills={setCurrentSkills}
-          onLLRSearch={handleLLRSearch}
+          onLLSSearch={handleLLSSearch}
           onCosineSearch={handleCosineSearch}
-          loading={isLoadingLLR || isLoadingCosine}
+          loading={isLoadingLLS || isLoadingCosine}
         />
 
         {/* Error Message */}
-        {errorLLR && currentAlgorithm === 'llr' && (
+        {errorLLS && currentAlgorithm === 'lls' && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 text-red-800">
             <p className="font-medium">Error</p>
-            <p className="text-sm">{errorLLR.message}</p>
+            <p className="text-sm">{errorLLS.message}</p>
           </div>
         )}
         {errorCosine && currentAlgorithm === 'cosine' && (
@@ -225,14 +225,14 @@ const Index = () => {
         )}
 
         {/* Analytics Dashboard including best match */}
-        {recommendationLLR && recommendationLLR.all_job_scores.length > 0 && currentAlgorithm === 'llr' && (
+        {recommendationLLS && recommendationLLS.all_job_scores.length > 0 && currentAlgorithm === 'lls' && (
           <div className="mt-8">
             <SkillAnalytics
-              results={recommendationLLR.all_job_scores}
+              results={recommendationLLS.all_job_scores}
               currentSkills={currentSkills}
               filters={filters}
               setFilters={setFilters}
-              topRecommendation={recommendationLLR}
+              topRecommendation={recommendationLLS}
             />
           </div>
         )}
@@ -249,9 +249,9 @@ const Index = () => {
         )}
 
         {/* Job Rankings */}
-        {recommendationLLR && recommendationLLR.all_job_scores.length > 0 && currentAlgorithm === 'llr' && (
+        {recommendationLLS && recommendationLLS.all_job_scores.length > 0 && currentAlgorithm === 'lls' && (
           <div className="mt-8">
-            <JobRankingCard jobScores={recommendationLLR.all_job_scores} />
+            <JobRankingCard jobScores={recommendationLLS.all_job_scores} />
           </div>
         )}
         {recommendationCosine && recommendationCosine.all_job_scores.length > 0 && currentAlgorithm === 'cosine' && (

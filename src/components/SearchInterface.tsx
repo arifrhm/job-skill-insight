@@ -11,7 +11,7 @@ interface SearchInterfaceProps {
   setJobTitle: (title: string) => void;
   currentSkills: Skill[];
   setCurrentSkills: (skills: Skill[]) => void;
-  onLLRSearch: () => void;
+  onLLSSearch: () => void;
   onCosineSearch: () => void;
   loading: boolean;
 }
@@ -31,7 +31,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
   setJobTitle,
   currentSkills,
   setCurrentSkills,
-  onLLRSearch,
+  onLLSSearch,
   onCosineSearch,
   loading
 }) => {
@@ -237,7 +237,7 @@ export const SearchInterface: React.FC<SearchInterfaceProps> = ({
         {/* Search Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button
-            onClick={onLLRSearch}
+            onClick={onLLSSearch}
             disabled={loading || !jobTitle.trim()}
             className="py-4 text-lg font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all duration-200 transform hover:scale-[1.02]"
           >

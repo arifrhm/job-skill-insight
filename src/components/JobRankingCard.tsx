@@ -42,7 +42,7 @@ const JobRankingCard: React.FC<JobRankingCardProps> = ({ jobScores }) => {
     if (job.algorithm === 'cosine_similarity') {
       return 'Cosine Score';
     }
-    return 'LLR Score';
+    return 'LLS Score';
   };
 
   return (

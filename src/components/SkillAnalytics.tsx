@@ -130,11 +130,11 @@ export const SkillAnalytics: React.FC<SkillAnalyticsProps> = ({
             <div>
               <h2 className="text-2xl font-bold mb-2">Best Match: {topRecommendation.job.job_title}</h2>
               <div className="text-sm text-gray-600 mb-2">
-                Algorithm: {topRecommendation.algorithm === 'llr_similarity' ? 'Log Likelihood Ratio (LLR)' : 'Cosine Similarity'}
+                Algorithm: {topRecommendation.algorithm === 'llr_similarity' ? 'Log Likelihood Similarity (LLS)' : 'Cosine Similarity'}
               </div>
               <div className="text-lg text-blue-600 font-semibold flex flex-col">
                 <span>
-                  {topRecommendation.algorithm === 'llr_similarity' ? 'LLR Score' : 'Cosine Score'}: {
+                  {topRecommendation.algorithm === 'llr_similarity' ? 'LLS Score' : 'Cosine Score'}: {
                     topRecommendation.algorithm === 'llr_similarity' 
                       ? topRecommendation.job.log_likelihood.toFixed(2)
                       : topRecommendation.job.similarity_score?.toFixed(4) || 'N/A'
