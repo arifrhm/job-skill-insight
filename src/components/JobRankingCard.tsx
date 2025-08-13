@@ -48,7 +48,7 @@ const JobRankingCard: React.FC<JobRankingCardProps> = ({ jobScores }) => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Top 10 Job Recommendations</CardTitle>
+        <CardTitle className="text-2xl font-bold">Top 10 Score Similarity Skill Job</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -72,6 +72,18 @@ const JobRankingCard: React.FC<JobRankingCardProps> = ({ jobScores }) => {
                     <span>{scoreLabel}: {score.toFixed(4)}</span>
                     <span>({getPercentage(score).toFixed(2)}%)</span>
                   </div>
+                </div>
+                {/* Skill Labels */}
+                <div className="mt-3 flex flex-wrap gap-1">
+                  {job.skills.map((skill, skillIndex) => (
+                    <Badge
+                      key={skillIndex}
+                      variant="secondary"
+                      className="text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             );
